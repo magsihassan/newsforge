@@ -17,13 +17,11 @@ import { useMemo } from 'react';
 // Label positions on the spectrum bar (as percentage from left)
 const LABEL_POSITIONS = {
   'Left': 5,
-  'Center-Left': 25,
   'Neutral': 50,
-  'Center-Right': 75,
   'Right': 95,
 };
 
-const LABEL_ORDER = ['Left', 'Center-Left', 'Neutral', 'Center-Right', 'Right'];
+const LABEL_ORDER = ['Left', 'Neutral', 'Right'];
 
 function BiasPanel({ biasLabel, confidence, probabilities }) {
   // Calculate needle position on spectrum

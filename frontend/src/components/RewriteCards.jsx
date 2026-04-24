@@ -30,7 +30,7 @@ const CARD_CONFIG = {
   corporate: {
     masthead: 'The Establishment Post',
     cssClass: 'news-card--corporate',
-    biasTarget: 'Center-Right',
+    biasTarget: 'Right',
     motto: 'Markets. Policy. Governance.',
   },
   activist: {
@@ -48,7 +48,7 @@ const CARD_CONFIG = {
   state: {
     masthead: 'State Gazette',
     cssClass: 'news-card--state',
-    biasTarget: 'Center',
+    biasTarget: 'Neutral',
     motto: 'Order. Stability. Progress.',
   },
 };
@@ -58,12 +58,9 @@ const STYLE_ORDER = ['neutral', 'corporate', 'activist', 'sensationalist', 'stat
 // Bias spectrum positions for calculating shift
 const BIAS_POSITION = {
   'Left': 0,
-  'Center-Left': 1,
-  'Neutral': 2,
-  'Center-Right': 3,
-  'Right': 4,
+  'Neutral': 1,
+  'Right': 2,
   'Sensationalist': -1,
-  'Center': 2.5,
 };
 
 function generateFakeDate() {

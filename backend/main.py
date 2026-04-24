@@ -224,9 +224,9 @@ async def lifespan(app: FastAPI):
             if os.path.exists(metadata_path):
                 with open(metadata_path, "r") as f:
                     metadata = json.load(f)
-                label_names = metadata.get("label_names", ["Left", "Center-Left", "Neutral", "Center-Right", "Right"])
+                label_names = metadata.get("label_names", ["Left", "Neutral", "Right"])
             else:
-                label_names = ["Left", "Center-Left", "Neutral", "Center-Right", "Right"]
+                label_names = ["Left", "Neutral", "Right"]
 
             model_loaded = True
             print(f"       ✓ Model loaded on {device}")
@@ -238,7 +238,7 @@ async def lifespan(app: FastAPI):
         print(f"       ✗ Model directory not found: {resolved_model_dir}")
         print(f"         Run 'python model/train.py' first to train the model.")
         # Set up fallback label names
-        label_names = ["Left", "Center-Left", "Neutral", "Center-Right", "Right"]
+        label_names = ["Left", "Neutral", "Right"]
         model_loaded = False
 
     # ── Check Ollama Connectivity ──
