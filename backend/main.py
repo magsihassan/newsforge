@@ -375,7 +375,7 @@ async def rewrite_with_style(text: str, style_key: str) -> RewriteResult:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=300.0) as client:
             response = await client.post(
                 f"{OLLAMA_BASE_URL}/api/chat",
                 json=payload,
@@ -395,7 +395,7 @@ async def rewrite_with_style(text: str, style_key: str) -> RewriteResult:
             style=style_key,
             name=style["name"],
             text=None,
-            error="Ollama request timed out (120s). Mistral may still be loading.",
+            error="Ollama request timed out (300s). Mistral may still be loading.",
         )
     except Exception as e:
         return RewriteResult(
