@@ -17,6 +17,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
+from tqdm import tqdm
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
@@ -124,7 +125,7 @@ def evaluate():
     all_probs = []
 
     with torch.no_grad():
-        for batch in test_loader:
+        for batch in tqdm(test_loader, desc="Testing", leave=False):
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             labels = batch["label"].to(device)

@@ -40,6 +40,7 @@ from transformers import (
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
+from tqdm import tqdm
 
 # ─────────────────────────────────────────────
 # Configuration
@@ -261,7 +262,7 @@ def evaluate_model(model, data_loader, device):
     all_labels = []
 
     with torch.no_grad():
-        for batch in data_loader:
+        for batch in tqdm(data_loader, desc="Evaluating", leave=False):
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             labels = batch["label"].to(device)
@@ -336,7 +337,7 @@ def train():
         total_loss = 0.0
         num_batches = 0
 
-        for batch_idx, batch in enumerate(train_loader):
+        for batch_idx, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch + 1:2d}/{EPOCHS}", leave=False)):
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             labels_batch = batch["label"].to(device)
