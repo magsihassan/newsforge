@@ -25,6 +25,7 @@ from typing import Optional
 import torch
 import httpx
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
@@ -35,8 +36,8 @@ from transformers import DistilBertTokenizer, DistilBertForSequenceClassificatio
 
 MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "model", "saved_model")
 OLLAMA_BASE_URL = "http://localhost:11434"
-OLLAMA_MODEL = "mistral"
-MAX_LENGTH = 256
+OLLAMA_MODEL = "llama3.2"
+MAX_LENGTH = 128
 
 # ─────────────────────────────────────────────
 # Global State
@@ -252,17 +253,17 @@ async def lifespan(app: FastAPI):
                 model_names = [m.get("name", "") for m in models]
                 print(f"       ✓ Ollama connected — models: {model_names}")
 
-                # Check if Mistral is available
-                has_mistral = any("mistral" in name.lower() for name in model_names)
-                if not has_mistral:
-                    print(f"       ⚠ Mistral not found. Run: ollama pull mistral")
+                # Check if Llama 3.2 is available
+                has_llama = any("llama3.2" in name.lower() for name in model_names)
+                if not has_llama:
+                    print(f"       ⚠ Llama 3.2 not found. Run: ollama pull llama3.2")
             else:
                 ollama_available = False
                 print(f"       ✗ Ollama returned status {response.status_code}")
     except Exception as e:
         ollama_available = False
         print(f"       ✗ Ollama not available: {e}")
-        print(f"         Start Ollama and run: ollama pull mistral")
+        print(f"         Start Ollama and run: ollama pull llama3.2")
 
     print(f"\n{'=' * 60}")
     print(f"  Ready! Model: {'✓' if model_loaded else '✗'} | Ollama: {'✓' if ollama_available else '✗'}")
@@ -349,7 +350,7 @@ def classify_bias(text: str) -> BiasResult:
 
 async def rewrite_with_style(text: str, style_key: str) -> RewriteResult:
     """
-    Send text to Ollama Mistral 7B with a style-specific system prompt.
+    Send text to Ollama Llama 3.2 with a style-specific system prompt.
 
     Args:
         text: The original news text
@@ -388,14 +389,14 @@ async def rewrite_with_style(text: str, style_key: str) -> RewriteResult:
                 style=style_key,
                 name=style["name"],
                 text=rewritten_text if rewritten_text else None,
-                error="Empty response from Mistral" if not rewritten_text else None,
+                error="Empty response from Llama 3.2" if not rewritten_text else None,
             )
     except httpx.TimeoutException:
         return RewriteResult(
             style=style_key,
             name=style["name"],
             text=None,
-            error="Ollama request timed out (300s). Mistral may still be loading.",
+            error="Ollama request timed out (300s). Llama 3.2 may still be loading.",
         )
     except Exception as e:
         return RewriteResult(
@@ -410,54 +411,39 @@ async def rewrite_with_style(text: str, style_key: str) -> RewriteResult:
 # Endpoints
 # ─────────────────────────────────────────────
 
-@app.post("/analyze", response_model=AnalyzeResponse)
+@app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
     """
     Analyze news text for bias and generate 5 style rewrites.
-
-    1. Runs text through DistilBERT → bias label + confidence + probabilities
-    2. Sends text to Ollama Mistral 7B with 5 style-specific prompts (in parallel)
-    3. Returns combined results
-
-    The bias classification returns instantly; rewrites may take 30-90 seconds
-    depending on Mistral's speed.
+    Uses Server-Sent Events (SSE) to stream results sequentially.
     """
     text = request.text.strip()
 
-    # Step 1: Classify bias (instant)
-    bias_result = classify_bias(text)
+    async def event_stream():
+        # Step 1: Classify bias (instant)
+        bias_result = classify_bias(text)
+        # Yield bias event
+        yield f"event: bias\ndata: {json.dumps(bias_result.model_dump())}\n\n"
 
-    # Step 2: Generate rewrites in parallel via Ollama
-    if ollama_available:
-        rewrite_tasks = [
-            rewrite_with_style(text, style_key)
-            for style_key in STYLE_PROMPTS.keys()
-        ]
-        rewrite_results = await asyncio.gather(*rewrite_tasks)
-    else:
-        # Ollama not available — return nulls with error
-        rewrite_results = [
-            RewriteResult(
-                style=key,
-                name=STYLE_PROMPTS[key]["name"],
-                text=None,
-                error="Ollama is not available. Start Ollama and pull mistral.",
-            )
-            for key in STYLE_PROMPTS.keys()
-        ]
+        # Step 2: Generate rewrites sequentially via Ollama
+        if ollama_available:
+            for style_key in STYLE_PROMPTS.keys():
+                result = await rewrite_with_style(text, style_key)
+                yield f"event: rewrite\ndata: {json.dumps(result.model_dump())}\n\n"
+        else:
+            # Ollama not available — return nulls with error
+            for key in STYLE_PROMPTS.keys():
+                result = RewriteResult(
+                    style=key,
+                    name=STYLE_PROMPTS[key]["name"],
+                    text=None,
+                    error="Ollama is not available. Start Ollama and pull llama3.2.",
+                )
+                yield f"event: rewrite\ndata: {json.dumps(result.model_dump())}\n\n"
+        
+        yield "event: done\ndata: {}\n\n"
 
-    # Build response
-    rewrites = {}
-    rewrite_errors = {}
-    for result in rewrite_results:
-        rewrites[result.style] = result.text
-        rewrite_errors[result.style] = result.error
-
-    return AnalyzeResponse(
-        bias=bias_result,
-        rewrites=rewrites,
-        rewrite_errors=rewrite_errors,
-    )
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @app.get("/health", response_model=HealthResponse)

@@ -91,14 +91,12 @@ function RewriteCards({ rewrites, rewriteErrors, originalBias }) {
 
   if (!rewrites) return null;
 
-  // Check if any rewrites are available
-  const hasAny = STYLE_ORDER.some((key) => rewrites[key]);
-  if (!hasAny && !STYLE_ORDER.some((key) => rewriteErrors?.[key])) return null;
+  // Progressive rendering: we render the cards as long as 'rewrites' is an object (even if empty)
 
   return (
     <div className="rewrite-section" id="rewrite-section">
       <div className="rewrite-section__title">
-        Editorial Rewrites by Mistral 7B
+        Editorial Rewrites by Llama 3.2
       </div>
 
       <div className="rewrite-grid">

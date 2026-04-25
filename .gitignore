@@ -37,7 +37,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Models
-# model/saved_model/  # Commented out because the user might want the model if trained
+model/saved_model/
 
 # OS
 .DS_Store

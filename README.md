@@ -1,11 +1,11 @@
 # NewsForge — AI-Powered News Bias Detector & Rewriter
 
-> **Detect political bias in news text using a custom fine-tuned DistilBERT model, then see how the same story reads through 5 distinct editorial lenses — powered by Mistral 7B running locally via Ollama. No API keys required.**
+> **Detect political bias in news text using a custom fine-tuned DistilBERT model, then see how the same story reads through 5 distinct editorial lenses — powered by Llama 3.2 running locally via Ollama. No API keys required.**
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![React](https://img.shields.io/badge/React-18-61DAFB)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688)
-![Ollama](https://img.shields.io/badge/Ollama-Mistral_7B-black)
+![Ollama](https://img.shields.io/badge/Ollama-Llama_3.2-black)
 
 ---
 
@@ -33,7 +33,7 @@ NewsForge is a full-stack media literacy tool that combines two AI systems to an
 
 1. **Bias Classifier** — A fine-tuned DistilBERT model trained on the BABE (Bias Annotations By Experts) dataset that classifies news sentences across 5 political bias categories: Left, Center-Left, Neutral, Center-Right, and Right.
 
-2. **Style Rewriter** — Ollama running Mistral 7B locally with 5 carefully engineered editorial personas, each rewriting the input text according to distinct journalistic conventions.
+2. **Style Rewriter** — Ollama running Llama 3.2 locally with 5 carefully engineered editorial personas, each rewriting the input text according to distinct journalistic conventions.
 
 Everything runs locally. No cloud APIs, no subscription keys, no data sent to external servers.
 
@@ -105,7 +105,7 @@ The model classifies text into 5 categories using a composite label derived from
 | **Center-Right** | Mild conservative/establishment lean | Biased text from center outlets (factual-leaning) |
 | **Right** | Strong conservative framing | Biased text from right-leaning outlets |
 
-### Style Rewriting (Mistral 7B)
+### Style Rewriting (Llama 3.2)
 
 Each editorial voice has a dedicated system prompt reflecting real journalistic conventions:
 
@@ -126,7 +126,7 @@ Each editorial voice has a dedicated system prompt reflecting real journalistic 
 - **Python 3.10+** with pip
 - **Node.js 18+** with npm
 - **Ollama** — [Download here](https://ollama.com)
-- **~6GB disk space** for Mistral 7B model
+- **~2GB disk space** for Llama 3.2 model
 - **GPU recommended** for model training (CPU works but slower)
 
 ### Step 1: Clone the Repository
@@ -156,7 +156,7 @@ This will:
 
 ```bash
 # Install Ollama from https://ollama.com
-ollama pull mistral
+ollama pull llama3.2
 ```
 
 Verify it's running:
@@ -338,7 +338,7 @@ Check backend service health.
 - Bias is a spectrum, not a binary. The 5 categories are simplifications.
 - The rewrites are AI-generated demonstrations, not ground truth of how biased outlets would actually cover a story.
 - This tool is for **education and research** — not for censorship, content moderation, or automated news filtering.
-- Mistral 7B's rewrites may contain hallucinated facts — they demonstrate style, not accuracy.
+- Llama 3.2's rewrites may contain hallucinated facts — they demonstrate style, not accuracy.
 
 ---
 
@@ -387,4 +387,4 @@ This project is for educational and research purposes. The BABE dataset is provi
 
 ---
 
-*Built with DistilBERT, Mistral 7B, FastAPI, React, and a deep appreciation for the Fourth Estate.*
+*Built with DistilBERT, Llama 3.2, FastAPI, React, and a deep appreciation for the Fourth Estate.*

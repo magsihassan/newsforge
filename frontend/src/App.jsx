@@ -31,8 +31,8 @@ function App() {
   const handleSubmit = async (text) => {
     setStatus('loading');
     setBiasResult(null);
-    setRewrites(null);
-    setRewriteErrors(null);
+    setRewrites({});
+    setRewriteErrors({});
     setErrorMessage('');
 
     try {
@@ -47,16 +47,42 @@ function App() {
         throw new Error(err.detail || `Server error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
 
-      // Set bias results (these come back instantly from the backend)
-      setBiasResult(data.bias);
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
 
-      // Set rewrites
-      setRewrites(data.rewrites);
-      setRewriteErrors(data.rewrite_errors);
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop(); // Keep incomplete chunk in buffer
 
-      setStatus('done');
+        for (const part of parts) {
+          if (!part.trim()) continue;
+
+          let eventType = '';
+          let eventData = '';
+          const lines = part.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('event:')) eventType = line.slice(6).trim();
+            if (line.startsWith('data:')) eventData = line.slice(5).trim();
+          }
+
+          if (eventType === 'bias') {
+            const data = JSON.parse(eventData);
+            setBiasResult(data);
+            setStatus('done'); // Transition to done so UI shows bias + empty cards
+          } else if (eventType === 'rewrite') {
+            const data = JSON.parse(eventData);
+            setRewrites((prev) => ({ ...prev, [data.style]: data.text }));
+            setRewriteErrors((prev) => ({ ...prev, [data.style]: data.error }));
+          } else if (eventType === 'done') {
+            // Stream complete
+          }
+        }
+      }
     } catch (err) {
       console.error('Analysis failed:', err);
       setErrorMessage(
@@ -94,7 +120,7 @@ function App() {
             </span>
           </div>
           <p className="app-masthead__edition">
-            {dateString} · DistilBERT Classification · Mistral 7B Rewriting · No API Keys Required
+            {dateString} · DistilBERT Classification · Llama 3.2 Rewriting · No API Keys Required
           </p>
         </header>
 
