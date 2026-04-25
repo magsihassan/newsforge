@@ -31,7 +31,7 @@
 
 NewsForge is a full-stack media literacy tool that combines two AI systems to analyze and transform news text:
 
-1. **Bias Classifier** — A fine-tuned DistilBERT model trained on the BABE (Bias Annotations By Experts) dataset that classifies news sentences across 5 political bias categories: Left, Center-Left, Neutral, Center-Right, and Right.
+1. **Bias Classifier** — A fine-tuned DistilBERT model trained on the BABE (Bias Annotations By Experts) dataset that classifies news sentences across 3 core political bias categories: Left, Neutral, and Right.
 
 2. **Style Rewriter** — Ollama running Llama 3.2 locally with 5 carefully engineered editorial personas, each rewriting the input text according to distinct journalistic conventions.
 
@@ -70,14 +70,14 @@ Everything runs locally. No cloud APIs, no subscription keys, no data sent to ex
                                   │  │  (saved_model/)      │  │
                                   │  │  → Bias Label        │  │
                                   │  │  → Confidence        │  │
-                                  │  │  → 5-Class Probs     │  │
+                                  │  │  → 3-Class Probs     │  │
                                   │  └─────────────────────┘  │
                                   │                           │
                                   │  ┌─────────────────────┐  │
-                                  │  │  Ollama / Mistral    │  │
+                                  │  │  Ollama / Llama 3.2  │  │
                                   │  │  (localhost:11434)   │  │
                                   │  │  → 5 Rewrites        │  │
-                                  │  │    (parallel)        │  │
+                                  │  │    (SSE Streaming)   │  │
                                   │  └─────────────────────┘  │
                                   └──────────────────────────┘
 ```
@@ -85,9 +85,9 @@ Everything runs locally. No cloud APIs, no subscription keys, no data sent to ex
 **Data Flow:**
 1. User pastes news text into the Wire Dispatch Terminal
 2. Frontend sends POST request to `/analyze`
-3. Backend runs DistilBERT inference → returns bias classification instantly
-4. Backend sends 5 parallel requests to Ollama with style-specific prompts
-5. All 5 rewrites return and display as newspaper-styled cards
+3. Backend runs DistilBERT inference → streams bias classification instantly via SSE
+4. Backend sequentially queries Ollama with style-specific prompts to prevent hardware timeouts
+5. Rewrites stream to the frontend one-by-one, progressively populating the newspaper cards
 
 ---
 
@@ -95,15 +95,13 @@ Everything runs locally. No cloud APIs, no subscription keys, no data sent to ex
 
 ### Bias Classification (DistilBERT)
 
-The model classifies text into 5 categories using a composite label derived from the BABE dataset:
+The model classifies text into 3 core categories using a composite label derived from the BABE dataset for higher stability on small datasets:
 
 | Label | Description | Source Mapping |
 |-------|-------------|----------------|
-| **Left** | Strong progressive/liberal framing | Biased text from left-leaning outlets |
-| **Center-Left** | Mild progressive lean with editorial tone | Biased text from center outlets (opinion-heavy) |
+| **Left** | Progressive/liberal framing | Biased text from left-leaning outlets |
 | **Neutral** | Factual, balanced reporting | Non-biased text from any outlet |
-| **Center-Right** | Mild conservative/establishment lean | Biased text from center outlets (factual-leaning) |
-| **Right** | Strong conservative framing | Biased text from right-leaning outlets |
+| **Right** | Conservative/establishment framing | Biased text from right-leaning outlets |
 
 ### Style Rewriting (Llama 3.2)
 
@@ -147,7 +145,7 @@ python train.py
 This will:
 - Download the BABE dataset from HuggingFace (~948 KB)
 - Fine-tune DistilBERT for ~10 epochs
-- Save the model to `model/saved_model/`
+- Save the model to `model/saved_model/` *(Note: Keep this folder in .gitignore to avoid GitHub's 100MB file limit)*
 - Print training metrics
 
 **Training time:** ~10-15 min on GPU, ~1-2 hours on CPU
@@ -217,8 +215,8 @@ If you use the BABE dataset, please cite:
 The training pipeline (`model/train.py`) performs:
 
 1. **Data Loading** — Downloads BABE from HuggingFace Datasets hub
-2. **Label Mapping** — Creates 5 composite classes from binary bias + outlet type + opinion labels
-3. **Tokenization** — DistilBERT tokenizer with max_length=256
+2. **Label Mapping** — Creates 3 core classes (Left/Neutral/Right) from binary bias + outlet type
+3. **Tokenization** — DistilBERT tokenizer with max_length=128 (optimized for sentence-level speed)
 4. **Stratified Splitting** — 80/10/10 train/val/test with class balance preservation
 5. **Fine-Tuning** — 10 epochs with:
    - Class-weighted CrossEntropyLoss (handles Neutral class dominance)
@@ -247,11 +245,10 @@ Expected approximate metrics (may vary with random seed):
 | Macro F1 | ~0.55-0.65 |
 | Weighted F1 | ~0.72-0.78 |
 
-**Note:** The 5-class task is inherently challenging because:
-- The BABE dataset was designed for binary (biased/non-biased) classification
-- Our 5-class mapping adds nuance but has class imbalance
-- Some bias categories have very few examples
-- Sentence-level bias is highly context-dependent
+**Note:** We reduced the original 5-class design to a **3-class task** because:
+- The BABE dataset (4,121 rows) is too small to accurately distinguish nuanced sub-categories like "Center-Left".
+- A 3-class mapping significantly reduces overfitting and improves baseline accuracy.
+- Sentence-level bias is highly context-dependent, and fewer classes improve DistilBERT's confidence.
 
 The model performs best at distinguishing Neutral from Biased text, and reasonably well at Left vs Right distinctions.
 
@@ -270,35 +267,19 @@ Analyze news text for bias and generate 5 editorial rewrites.
 }
 ```
 
-**Response:**
-```json
-{
-  "bias": {
-    "bias_label": "Right",
-    "confidence": 0.7823,
-    "probabilities": {
-      "Left": 0.0412,
-      "Center-Left": 0.0234,
-      "Neutral": 0.0891,
-      "Center-Right": 0.064,
-      "Right": 0.7823
-    }
-  },
-  "rewrites": {
-    "neutral": "Policy proposals face scrutiny from economic analysts...",
-    "corporate": "Market stakeholders are evaluating the potential fiscal impact...",
-    "activist": "Communities are pushing back against policies that deepen inequality...",
-    "sensationalist": "SHOCKING new agenda THREATENS to DESTROY the economy!",
-    "state": "Authorities are working to ensure economic stability..."
-  },
-  "rewrite_errors": {
-    "neutral": null,
-    "corporate": null,
-    "activist": null,
-    "sensationalist": null,
-    "state": null
-  }
-}
+**Response (Server-Sent Events):**
+```text
+event: bias
+data: {"bias_label": "Right", "confidence": 0.78, "probabilities": {"Left": 0.04, "Neutral": 0.18, "Right": 0.78}}
+
+event: rewrite
+data: {"style": "neutral", "name": "The Neutral Wire", "text": "Policy proposals face scrutiny...", "error": null}
+
+event: rewrite
+data: {"style": "corporate", "name": "The Establishment Post", "text": "Market stakeholders evaluate...", "error": null}
+
+event: done
+data: {}
 ```
 
 ### GET /health
@@ -312,7 +293,7 @@ Check backend service health.
   "model_loaded": true,
   "model_info": { "test_accuracy": 0.75, "best_epoch": 7 },
   "ollama_available": true,
-  "ollama_model": "mistral"
+  "ollama_model": "llama3.2"
 }
 ```
 
