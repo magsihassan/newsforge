@@ -30,30 +30,30 @@
   --paper-dark: #d4c9b0;
   --paper-aged: #c4b89a;
   
-  --press-red: #c0392b;
-  --press-red-dark: #96281b;
-  --press-red-light: #e74c3c;
+  --press-red: #1d4ed8; /* Changed to Editorial Blue */
+  --press-red-dark: #1e3a8a;
+  --press-red-light: #3b82f6;
   
   --gold: #d4a017;
   --gold-dark: #b8860b;
   --gold-light: #f0c040;
   
-  --font-masthead: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
-  --font-body: 'Source Serif 4', 'Georgia', serif;
-  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  --font-masthead: 'Lora', 'Georgia', 'Times New Roman', serif;
+  --font-body: 'Inter', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Space Mono', 'Courier New', monospace;
   
-  --glass-bg: rgba(13, 13, 13, 0.75);
-  --glass-border: rgba(242, 234, 216, 0.12);
-  --glass-highlight: rgba(242, 234, 216, 0.06);
+  --glass-bg: rgba(245, 240, 227, 0.85); /* Light frosted glass */
+  --glass-border: rgba(13, 13, 13, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.4);
 
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 16px;
   --radius-xl: 24px;
 
-  --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.3);
-  --shadow-heavy: 0 8px 48px rgba(0, 0, 0, 0.5);
-  --shadow-glow-red: 0 0 30px rgba(192, 57, 43, 0.2);
+  --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.1);
+  --shadow-heavy: 0 8px 48px rgba(0, 0, 0, 0.15);
+  --shadow-glow-red: 0 0 30px rgba(29, 78, 216, 0.2); /* Now Blue */
   --shadow-glow-gold: 0 0 30px rgba(212, 160, 23, 0.15);
 }
 
@@ -75,8 +75,8 @@ html {
 
 body {
   font-family: var(--font-body);
-  background: var(--ink-black);
-  color: var(--paper-white);
+  background: var(--paper-light); /* Changed to light background */
+  color: var(--ink-black); /* Changed to dark text */
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
@@ -92,8 +92,8 @@ body::after {
   height: 100%;
   background-image: repeating-linear-gradient(
     -45deg,
-    rgba(242, 234, 216, 0.03) 0px,
-    rgba(242, 234, 216, 0.03) 1px,
+    rgba(13, 13, 13, 0.03) 0px,
+    rgba(13, 13, 13, 0.03) 1px,
     transparent 1px,
     transparent 12px
   );
@@ -218,8 +218,8 @@ body::after {
   font-size: 3.5rem;
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: var(--paper-white);
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+  color: var(--ink-black);
+  text-shadow: none;
   line-height: 1;
 }
 
@@ -290,8 +290,8 @@ body::after {
     to bottom,
     transparent,
     transparent 2px,
-    rgba(242, 234, 216, 0.015) 2px,
-    rgba(242, 234, 216, 0.015) 4px
+    rgba(13, 13, 13, 0.02) 2px,
+    rgba(13, 13, 13, 0.02) 4px
   );
   pointer-events: none;
   z-index: 1;
@@ -330,13 +330,13 @@ body::after {
 .input-panel__textarea {
   width: 100%;
   min-height: 140px;
-  background: rgba(13, 13, 13, 0.6);
+  background: rgba(255, 255, 255, 0.5);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: 16px 18px;
   font-family: var(--font-mono);
   font-size: 0.9rem;
-  color: var(--paper-white);
+  color: var(--ink-black);
   line-height: 1.7;
   resize: vertical;
   outline: none;
@@ -544,7 +544,7 @@ body::after {
   font-family: var(--font-masthead);
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--paper-white);
+  color: var(--ink-black);
 }
 
 /* ─── Signal Strength (Confidence) ─── */
@@ -739,7 +739,7 @@ body::after {
   font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: var(--paper-white);
+  color: var(--ink-black);
 }
 
 .news-card__masthead-date {
@@ -765,7 +765,7 @@ body::after {
   font-family: var(--font-body);
   font-size: 0.88rem;
   line-height: 1.7;
-  color: var(--paper-medium);
+  color: var(--ink-subtle);
 }
 
 /* Bias Shift Badge */
